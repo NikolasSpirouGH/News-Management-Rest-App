@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.web</groupId>
-    <artifactId>restfulapi</artifactId>
+    <artifactId>News-Management-App</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>restfulapi</name>
     <description>restfulapi</description>
