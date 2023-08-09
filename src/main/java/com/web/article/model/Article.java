@@ -1,20 +1,28 @@
-package com.web.restfulapi.model;
+package com.web.article.model;
 
+import com.web.topic.model.Topic;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
 @ToString
 @Entity
-@Table(name="Articles")
+@NoArgsConstructor
+@Table(name="articles")
 public class Article {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,15 +36,19 @@ public class Article {
     @Column(name="content")
     private String content;
 
-    @Column(name="topic")
-    private String topic;
-
     @CreationTimestamp
     @Column(name="create_at",nullable = false,updatable = false)
-    private Date createdAt;
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name="status")
     private ArticleStatus status;
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    private List<Topic> topics = new ArrayList<>();
 
 }

@@ -1,4 +1,4 @@
-package com.web.restfulapi.model;
+package com.web.article.model;
 
 public enum ArticleStatus {
     CREATED,

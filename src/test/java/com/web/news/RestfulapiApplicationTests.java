@@ -1,4 +1,4 @@
-package com.web.restfulapi;
+package com.web.news;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
