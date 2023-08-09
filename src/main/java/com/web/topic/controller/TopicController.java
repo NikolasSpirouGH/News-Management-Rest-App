@@ -30,7 +30,7 @@ public class TopicController {
 
     //Get All Topics
     @GetMapping("/readAll")
-    public ResponseEntity<List<Topic>> readAllArticles() {
+    public ResponseEntity<List<Topic>> readAllTopics() {
         List<Topic> topics = topicService.getAllTopics();
         return new ResponseEntity<>(topics, HttpStatus.OK);
     }
