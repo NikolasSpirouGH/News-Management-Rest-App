@@ -6,17 +6,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
 public interface ArticleService {
 
-    public Article createArticle(Article article, List<String> topicNames);
 
-    public Article updateArticle(Article article);
+    public Article saveArticle(Article article);
 
-    public Article getArticleById(Long articleId);
+    List<Article> getArticles();
 
-    public Article submitArticle(Article article);
-
-    public List<Article> getAllArticles();
-
+    Article getArticleById(Long articleId);
 }

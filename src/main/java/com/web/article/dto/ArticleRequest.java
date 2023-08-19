@@ -1,21 +1,20 @@
 package com.web.article.dto;
 
-import com.web.topic.model.Topic;
-import lombok.AllArgsConstructor;
+import com.web.topic.dto.TopicRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.List;
-import java.util.Set;
 
 @Data
-
 public class ArticleRequest {
 
+    @NotBlank(message = "Article name should not be blank")
     private String name;
 
+    @NotBlank(message = "Article content should not be blank")
     private String content;
 
-    private Set<String> topics;
-
+    @NotEmpty(message = "Article topics should not be empty")
+    private List<TopicRequest> topics;
 }

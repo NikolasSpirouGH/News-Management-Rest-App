@@ -4,31 +4,40 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.web.article.model.Article;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
-@Table(name = "topics")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name="topics")
 public class Topic {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
-    private Long id;
+    @SequenceGenerator(
+            name = "topic_sequence",
+            sequenceName = "topic_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "topic_sequence"
+    )
+
+    private Long topicId;
 
     @Column(name = "name")
+    @NotBlank(message = "Name should not be null")
     private String name;
 
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "article_id")
-    private Article article;
+    @Column(name = "fathers_name")
+    private String fathersName;
+
+    
 
 
 }

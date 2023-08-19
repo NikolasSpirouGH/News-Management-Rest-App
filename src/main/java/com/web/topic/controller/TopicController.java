@@ -1,8 +1,9 @@
 package com.web.topic.controller;
 
-import com.web.topic.dto.TopicRequest;
+
 import com.web.topic.model.Topic;
 import com.web.topic.service.TopicService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,24 +15,18 @@ import java.util.List;
 @RequestMapping("/topics")
 public class TopicController {
 
-    private final TopicService topicService;
-
     @Autowired
-    public TopicController(TopicService topicService) {
-        this.topicService = topicService;
+    private TopicService topicService;
+
+    @PostMapping("/createTopic")
+    public ResponseEntity<Topic> saveTopic(@Valid @RequestBody Topic topic) {
+         return new ResponseEntity<Topic> (topicService.saveTopic(topic), HttpStatus.CREATED);
     }
 
-    //Create Topic
-    @PostMapping("/create")
-    public ResponseEntity<Topic> createTopic(@RequestBody TopicRequest topic) {
-        Topic createdTopic = topicService.createTopic(topic);
-        return new ResponseEntity<>(createdTopic, HttpStatus.CREATED);
-    }
-
-    //Get All Topics
     @GetMapping("/readAll")
     public ResponseEntity<List<Topic>> readAllTopics() {
         List<Topic> topics = topicService.getAllTopics();
         return new ResponseEntity<>(topics, HttpStatus.OK);
     }
+
 }
