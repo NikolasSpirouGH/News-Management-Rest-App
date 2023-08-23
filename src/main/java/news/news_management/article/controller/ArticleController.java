@@ -1,5 +1,6 @@
 package news.news_management.article.controller;
 
+import news.news_management.article.dto.ArticleResponseWithComments;
 import news.news_management.article.model.Article;
 import news.news_management.article.model.ArticleStatus;
 import news.news_management.comment.model.Comment;
@@ -33,26 +34,34 @@ public class ArticleController {
     @Autowired
     private CommentService commentService;
 
+    @Transactional
     @PostMapping("/saveArticle")
     public ResponseEntity<Article> saveArticle(@Valid @RequestBody ArticleRequest request) {
         Article article = new Article();
-        article.setName(request.getName());
-        article.setContent(request.getContent());
-        article.setStatus(ArticleStatus.CREATED);
 
-        List<Topic> topics = new ArrayList<>();
-        for (TopicRequest topicRequest : request.getTopics()) {
-            Topic existingTopic = topicService.getTopicByName(topicRequest.getName());
-            if (existingTopic != null) {
-                topics.add(existingTopic); // Add the existing topic to the list
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            Article existingArticle = articleService.getArticleByName(request.getName());
+            if (existingArticle != null) {
+                throw new RuntimeException("Article with this name already exists");
             }
-        }
 
-        article.setTopics(topics);
+            article.setName(request.getName());
+            article.setContent(request.getContent());
+            article.setStatus(ArticleStatus.CREATED);
 
-        return new ResponseEntity<>(articleService.saveArticle(article), HttpStatus.CREATED);
+            List<Topic> topics = new ArrayList<>();
+            for (TopicRequest topicRequest : request.getTopics()) {
+                Topic existingTopic = topicService.getTopicByName(topicRequest.getName());
+                if (existingTopic != null) {
+                    topics.add(existingTopic); // Add the existing topic to the list
+                } else {
+                    throw new RuntimeException("Topic doesnt exist");
+                }
+            }
+
+            article.setTopics(topics);
+
+            return new ResponseEntity<>(articleService.saveArticle(article), HttpStatus.CREATED);
+
     }
 
     @Transactional
@@ -172,39 +181,39 @@ public class ArticleController {
         return new ResponseEntity<>(publishedArticle, HttpStatus.OK);
     }
 
-    @GetMapping("/searchArticles")
-    public ResponseEntity<List<Article>> searchArticles(@RequestParam(required = false) String name, @RequestParam(required = false) String content) {
-        List<Article> results = new ArrayList<>();
-
-        if (name != null && content != null) {
-            // Search by both title and content
-            results = articleService.searchArticlesByNameAndContent(name, content);
-        } else if (name != null) {
-            // Search by title
-            results = articleService.searchArticlesByName(name);
-        } else if (content != null) {
-            // Search by content
-            results = articleService.searchArticlesByContent(content);
-        } else return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-
-        return new ResponseEntity<>(results,HttpStatus.OK);
-    }
+//    @GetMapping("/searchArticles")
+//    public ResponseEntity<List<Article>> searchArticles(@RequestParam(required = false) String name, @RequestParam(required = false) String content) {
+//        List<Article> results = new ArrayList<>();
+//
+//        if (name != null && content != null) {
+//            // Search by both title and content
+//            results = articleService.searchArticlesByNameAndContent(name, content);
+//        } else if (name != null) {
+//            // Search by title
+//            results = articleService.searchArticlesByName(name);
+//        } else if (content != null) {
+//            // Search by content
+//            results = articleService.searchArticlesByContent(content);
+//        } else return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//
+//        return new ResponseEntity<>(results,HttpStatus.OK);
+//    }
 
     @GetMapping("/getArticleById/{articleId}")
-    public ResponseEntity<Article> getArticleById(@PathVariable Long articleId) {
+    public ResponseEntity<String> getArticleById(@PathVariable Long articleId) {
         Article article = articleService.getArticleById(articleId);
 
         if (article == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        // Fetch comments associated with the article
         List<Comment> comments = commentService.getCommentsByArticleId(articleId);
 
-        // Set the comments in the article object
-        article.setComments(comments);
+        System.out.println(comments);
 
-        return new ResponseEntity<>(article, HttpStatus.OK);
+        ArticleResponseWithComments response = new ArticleResponseWithComments(article, comments);
+
+        return new ResponseEntity<>(response.getArticle() + "\n\n Comments : \n\n" + response.getComments(), HttpStatus.OK);
     }
 
     @GetMapping("/listArticles")

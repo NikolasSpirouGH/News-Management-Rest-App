@@ -9,16 +9,15 @@ import java.util.List;
 
 public interface ArticleService {
 
-
     public Article saveArticle(Article article);
 
-    List<Article> getArticles();
+    Article getArticleByName(String name);
 
     Article getArticleById(Long articleId);
 
     List<Article> searchArticlesByNameAndContent(String name, String content);
 
-    List<Article> searchArticlesByName(String name);
+//    List<Article> searchArticlesByName(String name);
 
     List<Article> searchArticlesByContent(String content);
 

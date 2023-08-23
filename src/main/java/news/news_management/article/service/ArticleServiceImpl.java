@@ -27,13 +27,13 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<Article> getArticles() {
-        return articleRepository.findAll();
+    public Article getArticleByName(String name) {
+        return articleRepository.findByName(name);
     }
 
     @Override
     public Article getArticleById(Long articleId) {
-        return articleRepository.findById(articleId).orElse(null);
+        return articleRepository.findById(articleId).orElseThrow();
     }
 
     @Override
@@ -42,10 +42,10 @@ public class ArticleServiceImpl implements ArticleService {
         return articleRepository.findByNameContainingAndContentContaining(name, content);
     }
 
-    @Override
-    public List<Article> searchArticlesByName(String name) {
-        return articleRepository.findByName(name);
-    }
+//    @Override
+//    public List<Article> searchArticlesByName(String name) {
+//        return articleRepository.findByName(name);
+//    }
 
     @Override
     public List<Article> searchArticlesByContent(String content) {

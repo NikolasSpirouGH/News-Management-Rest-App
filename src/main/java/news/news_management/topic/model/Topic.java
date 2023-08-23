@@ -25,10 +25,10 @@ public class Topic {
             strategy = GenerationType.SEQUENCE,
             generator = "topic_sequence"
     )
-
+    @Column(name="topic_id")
     private Long topicId;
 
-    @Column(name = "name")
+    @Column(name = "name",unique = true)
     @NotBlank(message = "Name should not be null")
     private String name;
 

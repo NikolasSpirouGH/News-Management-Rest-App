@@ -8,7 +8,6 @@ import java.time.LocalDate;
 
 @Setter
 @Getter
-@ToString
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -45,8 +44,22 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "article_id",
-            referencedColumnName = "articleId"
+            referencedColumnName = "article_id"
     )
     private Article article;
+
+
+    @Override
+    public String toString() {
+        if(!status.toString().equals("APPROVED")){
+            return "No APPROVED comments for Article: " + article.getArticleId() +".";
+        }
+        return "Comment{" +
+
+                ", text='" + text + '\'' +
+                ", authorName='" + authorName + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
+    }
 
 }

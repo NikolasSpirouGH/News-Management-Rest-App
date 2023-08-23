@@ -13,11 +13,11 @@ import java.util.List;
 
 @Setter
 @Getter
-@ToString
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+
 @Table(name="articles")
 public class Article {
 
@@ -32,9 +32,10 @@ public class Article {
             strategy = GenerationType.IDENTITY,
             generator = "article_generator"
     )
+    @Column(name="article_id")
     private Long articleId;
 
-    @Column(name="name")
+    @Column(name="name",unique = true)
     private String name;
 
     @Column(name="content")
@@ -51,19 +52,33 @@ public class Article {
     @Column(name="status")
     private ArticleStatus status;
 
+    @Column(name = "rejection_reason")
     private String rejectionReason;
 
-@ManyToMany
+    @Override
+    public String toString() {
+        return "Article{" +
+                "articleId=" + articleId +
+                ", name='" + name + '\'' +
+                ", content='" + content + '\'' +
+                ", createdAt=" + createdAt +
+                ", publishedAt=" + publishedAt +
+                ", status=" + status +
+                ", rejectionReason='" + rejectionReason + '\'' +
+                ", topics=" + topics +
+                '}';
+    }
+
+    @ManyToMany
 @JoinTable(
         name = "article_topic_map",
         joinColumns = @JoinColumn(
                 name = "article_id",
-                referencedColumnName = "articleId"
+                referencedColumnName = "article_id"
         ),
         inverseJoinColumns = @JoinColumn(
                 name="topic_id",
-                referencedColumnName = "topicId"
-
+                referencedColumnName = "topic_id"
         )
 )
     private List<Topic> topics;

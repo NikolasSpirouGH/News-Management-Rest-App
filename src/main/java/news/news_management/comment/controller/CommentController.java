@@ -36,14 +36,15 @@ public class CommentController {
         comment.setArticle(findArticle);
 
         if(findArticle.getStatus() != ArticleStatus.PUBLISHED) {
-            throw new IllegalAccessException();
+            throw new RuntimeException("Not published article");
         }
 
         // Save the comment using the CommentService
         Comment savedComment = commentService.createComment(comment);
 
-        return new ResponseEntity<>("Comment Saved : " + comment.getText() + " " + " with id " + " " + comment.getCommentId(), HttpStatus.CREATED);
+        return new ResponseEntity<>("Comment Saved : " + comment.getText() + " " + " with id " + " " + comment.getCommentId() + " " + "for article " + findArticle.getName(), HttpStatus.CREATED);
     }
+
 
 }
 
