@@ -13,7 +13,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
 
     List<Article> findByNameContainingAndContentContaining(String name, String content);
 
-    List<Article> findByName(String name);
+    Article findByName(String name);
 
     List<Article> findByContent(String content);
 
@@ -24,4 +24,5 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
     List<Article> findAllByOrderByStatusDescCreatedAtDesc();
 
     List<Article> findByStatusAndCreatedAtBetweenOrStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(ArticleStatus status, LocalDateTime localDateTime, LocalDateTime localDateTime1, ArticleStatus status1, LocalDateTime localDateTime2, LocalDateTime localDateTime3);
+
 }
