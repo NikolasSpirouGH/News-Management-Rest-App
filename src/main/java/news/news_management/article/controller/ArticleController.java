@@ -24,6 +24,8 @@ import java.util.List;
 @RequestMapping("/articles")
 public class ArticleController {
 
+    private String k;
+
     @Autowired
     private ArticleService articleService;
 
