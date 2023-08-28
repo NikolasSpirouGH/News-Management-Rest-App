@@ -20,15 +20,7 @@ import java.time.LocalDate;
 public class Comment {
 
     @Id
-    @SequenceGenerator(
-            name = "comment_generator",
-            sequenceName = "comment_sequence",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY,
-            generator = "comment_generator"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long commentId;
 
     @Column(name="text")

@@ -36,54 +36,20 @@ public class ArticleController {
     private ArticleService articleService;
 
     @Autowired
-    private TopicService topicService;
-
-    @Autowired
     private CommentService commentService;
 
     private static final Logger logger = LoggerFactory.getLogger(ArticleController.class);
 
-    @Transactional
     @PostMapping("/saveArticle")
     public ResponseEntity<Article> saveArticle(@Valid @RequestBody ArticleRequest request) {
         Article article = articleService.createArticle(request);
         return new ResponseEntity<>(article, HttpStatus.CREATED);
     }
 
-    @Modifying
-    @Transactional
     @PutMapping("/updateArticle/{articleId}")
     public ResponseEntity<Article> updateArticle(@PathVariable Long articleId, @Valid @RequestBody ArticleRequest request) {
-        Article existingArticle = articleService.getArticleById(articleId);
-        if (existingArticle == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        if (existingArticle.getStatus() == ArticleStatus.PUBLISHED) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        existingArticle.getTopics().clear();
-
-        existingArticle.setName(request.getName());
-        existingArticle.setContent(request.getContent());
-
-        List<Topic> updatedTopics = new ArrayList<>();
-        for (TopicRequest topicRequest : request.getTopics()) {
-            Topic existingTopic = topicService.getTopicByName(topicRequest.getName());
-
-            if (existingTopic != null) {
-
-                updatedTopics.add(existingTopic);
-            } else {
-                System.out.println("Bad Topics");
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        }
-        existingArticle.setTopics(updatedTopics);
-
-        Article updatedArticle = articleService.saveArticle(existingArticle);
-        return new ResponseEntity<>(updatedArticle, HttpStatus.OK);
+        Article article = articleService.updateArticle(articleId, request);
+        return new ResponseEntity<>(article, HttpStatus.OK);
     }
 
     @Transactional

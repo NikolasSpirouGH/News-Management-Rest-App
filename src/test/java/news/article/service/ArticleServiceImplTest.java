@@ -7,15 +7,18 @@ import news.dto.TopicRequest;
 import news.entity.Topic;
 import news.service.TopicService;
 import news.service.ArticleServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,6 +35,11 @@ public class ArticleServiceImplTest {
 
     @Mock
     private TopicService topicService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+    }
 
     @Test
     public void testCreateArticle_Success() {
@@ -58,7 +66,7 @@ public class ArticleServiceImplTest {
         Topic existingTopicBasketball = new Topic();
         when(topicService.getTopicByName("Basketball")).thenReturn(existingTopicBasketball);
 
-        Topic existingTopicFootball= new Topic();
+        Topic existingTopicFootball = new Topic();
         when(topicService.getTopicByName("Football")).thenReturn(existingTopicFootball);
 
         // Create an Article object to be returned from the repository's save method
@@ -87,5 +95,47 @@ public class ArticleServiceImplTest {
         assertEquals(savedArticle.getTopics(), createdArticle.getTopics());
 
     }
-}
 
+    @Test
+    public void testUpdateArticle_Success() {
+        // Create a test ArticleRequest and TopicRequest
+        ArticleRequest articleRequest = new ArticleRequest();
+        articleRequest.setName("Updated Article");
+        articleRequest.setContent("Updated Content");
+
+        TopicRequest topicRequest1 = new TopicRequest();
+        topicRequest1.setName("Topic1");
+        topicRequest1.setFathersName("ParentTopic"); // Assuming a parent topic name
+
+        List<TopicRequest> topicRequests = new ArrayList<>();
+        topicRequests.add(topicRequest1);
+        articleRequest.setTopics(topicRequests);
+
+        // Create a test Article
+        Article existingArticle = new Article();
+        existingArticle.setArticleId(1L);
+        existingArticle.setName("Old Article");
+        existingArticle.setContent("Old Content");
+
+        // Create a test Topic
+        Topic existingTopic = new Topic();
+        existingTopic.setTopicId(1L);
+        existingTopic.setName("Topic1");
+
+        // Set up mock behavior
+        when(articleRepository.findById(1L)).thenReturn(Optional.of(existingArticle));
+        when(topicService.getTopicByName("Topic1")).thenReturn(existingTopic);
+        when(articleRepository.save(existingArticle)).thenReturn(existingArticle);
+
+        // Call the method to be tested
+        Article updatedArticle = articleService.updateArticle(1L, articleRequest);
+
+        // Assertions or verifications
+        verify(articleRepository, times(1)).findById(1L);
+        verify(topicService, times(1)).getTopicByName("Topic1");
+        verify(articleRepository, times(1)).save(existingArticle);
+        assertEquals("Updated Article", updatedArticle.getName());
+        assertEquals("Updated Content", updatedArticle.getContent());
+        // Verify other assertions as needed
+    }
+}

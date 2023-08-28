@@ -23,17 +23,9 @@ import java.util.List;
 public class Article {
 
     @Id
-    @SequenceGenerator(
-            name = "article_generator",
-            sequenceName = "article_sequence",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY,
-            generator = "article_generator"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="article_id")
-    private Long articleId;
+    private Long articleId ;
 
     @Column(name="name",unique = true)
     private String name;

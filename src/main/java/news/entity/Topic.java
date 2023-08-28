@@ -1,7 +1,6 @@
 package news.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,15 +15,7 @@ import lombok.NoArgsConstructor;
 public class Topic {
 
     @Id
-    @SequenceGenerator(
-            name = "topic_sequence",
-            sequenceName = "topic_sequence",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "topic_sequence"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="topic_id")
     private Long topicId;
 

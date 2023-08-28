@@ -27,15 +27,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ArticleAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleArticleAlreadyExists(ArticleAlreadyExistsException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.CONFLICT, "Article already exists");
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(TopicNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleTopicNotFoundException(TopicNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND, "Topic not found");
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
-
+    @ExceptionHandler(ArticleNotFoundException.class)
+    public ResponseEntity<Object> handleArticleNotFoundException(ArticleNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
 }

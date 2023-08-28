@@ -26,4 +26,6 @@ public interface ArticleService {
     List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate);
 
     Article createArticle(ArticleRequest request);
+
+    Article updateArticle(Long articleId,ArticleRequest request);
 }

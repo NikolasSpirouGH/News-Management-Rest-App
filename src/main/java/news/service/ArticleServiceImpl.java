@@ -3,6 +3,7 @@ package news.service;
 import news.dto.ArticleRequest;
 import news.dto.ArticleResponseWithComments;
 import news.exception.ArticleAlreadyExistsException;
+import news.exception.ArticleNotFoundException;
 import news.exception.TopicNotFoundException;
 import news.entity.Article;
 import news.entity.ArticleStatus;
@@ -14,7 +15,11 @@ import news.entity.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -123,6 +128,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    @Transactional
     public Article createArticle(ArticleRequest request) {
         // Check if an article with the same name already exists
         Article existingArticle = articleRepository.findByName(request.getName());
@@ -154,6 +160,53 @@ public class ArticleServiceImpl implements ArticleService {
 
         return article;
     }
+
+    @Override
+    @Transactional
+    @Modifying
+    public Article updateArticle(Long articleId, ArticleRequest request) {
+        try {
+            Optional<Article> optionalArticle = articleRepository.findById(articleId);
+            Article existingArticle = optionalArticle.orElseThrow(() -> new ArticleNotFoundException("Article not found"));
+
+
+            if (existingArticle == null) {
+                logger.warn("Article with ID {} not found.", articleId);
+                throw new ArticleNotFoundException("Article not found");
+            }
+
+            if (existingArticle.getStatus() == ArticleStatus.PUBLISHED) {
+                logger.warn("Article with ID {} is already published.", articleId);
+                throw new ArticleAlreadyExistsException("Article is already published");
+            }
+
+            List<Topic> updatedTopics = new ArrayList<>();
+            for (TopicRequest topicRequest : request.getTopics()) {
+                Topic existingTopic = topicService.getTopicByName(topicRequest.getName());
+
+                if (existingTopic != null) {
+                    updatedTopics.add(existingTopic);
+                } else {
+                    logger.warn("Invalid topic: {}", topicRequest.getName());
+                    throw new TopicNotFoundException("Invalid topic: " + topicRequest.getName());
+                }
+            }
+            // Update article properties
+            existingArticle.setName(request.getName());
+            existingArticle.setContent(request.getContent());
+            existingArticle.setTopics(updatedTopics);
+
+            // Save the updated article
+            Article updatedArticle = articleRepository.save(existingArticle);
+
+            logger.info("Article with ID {} updated successfully.", articleId);
+            return updatedArticle;
+        } catch (Exception e) {
+            logger.error("An error occurred while updating the article with ID " + articleId, e);
+            throw e;
+        }
+    }
+
 }
 
 
