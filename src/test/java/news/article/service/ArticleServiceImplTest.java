@@ -1,26 +1,12 @@
 package news.article.service;
 
-import lombok.RequiredArgsConstructor;
-import news.entity.Article;
-import news.entity.ArticleStatus;
-import news.entity.Topic;
-import news.payload.ArticleDTO;
-import news.payload.TopicDTO;
-import news.repository.ArticleRepository;
-import news.repository.TopicRepository;
-import news.service.impl.ArticleServiceImpl;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.news.repository.ArticleRepository;
+import com.news.repository.TopicRepository;
+import com.news.service.impl.ArticleServiceImpl;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @SpringJUnitConfig
