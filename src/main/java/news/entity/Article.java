@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
@@ -45,6 +46,7 @@ public class Article {
     private ArticleStatus status;
 
     @Column(name = "rejection_reason")
+    @ColumnDefault("'No rejection reason provided'")
     private String rejectionReason;
 
     @ManyToMany
@@ -65,11 +67,4 @@ public class Article {
 @JsonBackReference
     private List<Comment> comments = new ArrayList<>();
 
-    public void setRejectionReason(String rejectionReason) {
-        this.rejectionReason = rejectionReason;
-    }
-
-    public void setPublishedAt(LocalDate publishedAt) {
-        this.publishedAt = publishedAt;
-    }
 }

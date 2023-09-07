@@ -1,12 +1,17 @@
-package news.dto;
+package news.payload;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
+import news.entity.ArticleStatus;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class ArticleRequest {
+public class ArticleDTO {
+
+    private Long articleId;
 
     @NotBlank(message = "Article name should not be blank")
     private String name;
@@ -15,5 +20,15 @@ public class ArticleRequest {
     private String content;
 
     @NotEmpty(message = "Article topics should not be empty")
-    private List<TopicRequest> topics;
+    private List<TopicDTO> topics;
+
+    private List<CommentDTO> comments;
+
+    private LocalDate createdAt;
+
+    private LocalDate publishedAt;
+
+    private String rejectionReason;
+
+    private ArticleStatus articleStatus;
 }

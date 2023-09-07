@@ -22,7 +22,7 @@ public class Topic {
     @Column(name = "name",unique = true)
     private String name;
 
-    @Column(name = "fathers_name")
-    private String fathersName;
+    @Column(name = "parent_name")
+    private String parentName;
 
 }

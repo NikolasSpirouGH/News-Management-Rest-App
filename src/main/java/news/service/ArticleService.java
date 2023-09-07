@@ -1,31 +1,38 @@
 package news.service;
 
-import news.dto.ArticleRequest;
-import news.dto.ArticleResponseWithComments;
+import news.payload.ArticleDTO;
 import news.entity.Article;
-import news.entity.ArticleStatus;
+import news.payload.ArticleResponse;
 
-
-import java.time.LocalDate;
 import java.util.List;
 
 public interface ArticleService {
-
-    public Article saveArticle(Article article);
+//
+//    public Article saveArticle(Article article);
 
     Article getArticleByName(String name);
 
     Article getArticleById(Long articleId);
+//
+//    List<ArticleResponseWithComments> searchArticlesByNameAndContent(String name, String content);
+//
+//    ArticleResponseWithComments searchArticlesByName(String name);
+//
+//    List<ArticleResponseWithComments> searchArticlesByContent(String content);
+//
+//    List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate);
 
-    List<ArticleResponseWithComments> searchArticlesByNameAndContent(String name, String content);
+    ArticleDTO createArticle(ArticleDTO request);
 
-    ArticleResponseWithComments searchArticlesByName(String name);
+    ArticleDTO updateArticle(ArticleDTO request, Long articleId);
 
-    List<ArticleResponseWithComments> searchArticlesByContent(String content);
+    ArticleDTO submitArticle(Long id);
 
-    List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate);
+    ArticleDTO approveArticle(Long id);
 
-    Article createArticle(ArticleRequest request);
+    ArticleDTO rejectArticle(Long id, String rejectionReason);
 
-    Article updateArticle(Long articleId,ArticleRequest request);
+    ArticleDTO publishArticle(Long id);
+
+    List<ArticleDTO> searchArticles(String name, String content);
 }

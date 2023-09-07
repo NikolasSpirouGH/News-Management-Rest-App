@@ -1,47 +1,29 @@
 package news.controller;
 
-import news.entity.Article;
-import news.entity.ArticleStatus;
+import lombok.RequiredArgsConstructor;
+import news.payload.CommentDTO;
 import news.service.ArticleService;
-import news.dto.CommentRequest;
-import news.entity.Comment;
-import news.entity.CommentStatus;
 import news.service.CommentService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/comments")
+@RequiredArgsConstructor
 public class CommentController {
 
-    @Autowired
-    private CommentService commentService;
+    private final CommentService commentService;
 
-    @Autowired
-    private ArticleService articleService;
+    private final ArticleService articleService;
 
-    @PostMapping("/createComment")
-    public ResponseEntity<String> createComment(@Valid @RequestBody CommentRequest request) throws IllegalAccessException {
-        Long articleId = request.getArticleId();
-        Article findArticle =  articleService.getArticleById(articleId);
-
-        Comment comment = new Comment();
-        comment.setText(request.getText());
-        comment.setAuthorName(request.getAuthorName());
-        comment.setStatus(CommentStatus.CREATED);
-        comment.setArticle(findArticle);
-
-        if(findArticle.getStatus() != ArticleStatus.PUBLISHED) {
-            throw new RuntimeException("Not published article");
-        }
-
-        commentService.createComment(comment);
-
-        return new ResponseEntity<>("Comment Saved : " + comment.getText() + " " + " with id " + " " + comment.getCommentId() + " " + "for article " + findArticle.getName(), HttpStatus.CREATED);
+    @PostMapping("/createComment/{articleId}")
+    public ResponseEntity<CommentDTO> createComment(@PathVariable(value = "articleId") long articleId,
+                                                    @Valid @RequestBody CommentDTO commentDto){
+        return new ResponseEntity<>(commentService.createComment(articleId, commentDto), HttpStatus.CREATED);
     }
+
 
 //    @PutMapping("/updateComment/{commentId}")
 //    public ResponseEntity<CommentResponse> updateComment(@PathVariable Long commentId,@Valid @RequestBody CommentRequest request) {

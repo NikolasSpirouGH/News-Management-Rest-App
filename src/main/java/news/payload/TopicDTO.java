@@ -1,4 +1,4 @@
-package news.dto;
+package news.payload;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -7,10 +7,12 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class TopicRequest {
+public class TopicDTO {
+
+    private Long topicId;
 
     @NotBlank(message = "Name should not be null")
     private String name;
 
-    private String fathersName;
+    private String parentName;
 }

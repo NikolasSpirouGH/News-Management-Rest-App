@@ -25,4 +25,5 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
 
     List<Article> findByStatusAndCreatedAtBetweenOrStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(ArticleStatus status, LocalDateTime localDateTime, LocalDateTime localDateTime1, ArticleStatus status1, LocalDateTime localDateTime2, LocalDateTime localDateTime3);
 
+    Article findByNameContaining(String name);
 }

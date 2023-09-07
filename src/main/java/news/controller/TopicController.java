@@ -1,6 +1,7 @@
 package news.controller;
 
 import news.entity.Topic;
+import news.payload.TopicDTO;
 import news.service.TopicService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +18,9 @@ public class TopicController {
     private TopicService topicService;
 
     @PostMapping("/createTopic")
-    public ResponseEntity<Topic> saveTopic(@Valid @RequestBody Topic topic) {
-         return new ResponseEntity<Topic> (topicService.saveTopic(topic), HttpStatus.CREATED);
+    public ResponseEntity<TopicDTO> saveTopic(@Valid @RequestBody TopicDTO topicDTO) {
+        TopicDTO topic = topicService.createTopic(topicDTO);
+         return new ResponseEntity<>(topic, HttpStatus.CREATED);
     }
 
     @GetMapping("/readAll")
