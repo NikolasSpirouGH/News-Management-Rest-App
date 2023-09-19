@@ -18,13 +18,14 @@ public class CommentController {
 
     private final CommentService commentService;
     @PostMapping("/createComment/{articleId}")
+    @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN', 'VISITOR', 'JOURNALIST')")
     public ResponseEntity<CommentDTO> createComment(@PathVariable(value = "articleId") long articleId,
                                                     @Valid @RequestBody CommentDTO commentDto, @AuthenticationPrincipal UserDetails userDetails){
         return new ResponseEntity<>(commentService.createComment(articleId, commentDto, userDetails), HttpStatus.CREATED);
     }
 
     @PutMapping("/comments/updateComment/{id}")
-    @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('EDITOR', 'ADMIN')")
     public ResponseEntity<CommentDTO> updateComment(@PathVariable(value = "id") Long commentId,
                                                     @Valid @RequestBody CommentDTO commentDto, @AuthenticationPrincipal UserDetails userDetails){
         CommentDTO updatedComment = commentService.updateComment(commentId, commentDto);

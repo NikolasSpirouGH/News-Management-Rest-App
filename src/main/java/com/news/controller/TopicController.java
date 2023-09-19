@@ -28,6 +28,7 @@ public class TopicController {
         return new ResponseEntity<>(topic, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
     @GetMapping("/readAll")
     public ResponseEntity<List<Topic>> readAllTopics() {
         List<Topic> topics = topicService.getAllTopics();

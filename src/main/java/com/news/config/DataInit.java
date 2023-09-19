@@ -14,7 +14,6 @@ public class DataInit implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Initialize roles
         initializeRoles();
     }
 

@@ -148,37 +148,24 @@ public class ArticleServiceImpl implements ArticleService {
     @Transactional
     public ArticleDTO submitArticle(Long articleId, @AuthenticationPrincipal UserDetails userDetails) {
 
-        // get post by id from the database
         Article article = articleRepository.findById(articleId).orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
-        ArticleDTO articleDTO = modelMapper.map(article, ArticleDTO.class);
-        //first we have to complete all the Authorization logic
-        // Check if the user has the role "JOURNALIST" and is the same as the article's creator
         boolean isJournalist = false;
         if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("JOURNALIST"))) {
-            // Retrieve the user_id from the ArticleDTO
-            String articleUsername = articleDTO.getUsername(); // Assuming there is a getUserId() method in ArticleDTO
-
+            String articleUsername = userDetails.getUsername();
             User articleUser = userRepository.findByUsername(articleUsername);
             if (articleUser == null) {
-                // If the user with the specified username doesn't exist, throw an exception
-                //throw new UsernameNotFoundException(articleUsername);
                 throw new AccessDeniedException("You are not authorized to update an article for another user.");
             }
-            // Check if the username of the fetched user matches the username from the token
             if (!userDetails.getUsername().equals(articleUser.getUsername())) {
-                // Return an unauthorized response if the usernames don't match
                 throw new AccessDeniedException("You are not authorized to create an article for another user.");
-                //return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             isJournalist = true;
         }
-        //if the article is already published
         if (article.getStatus() == ArticleStatus.PUBLISHED) {
             logger.warn("Article with ID {} is already published.", articleId);
             throw new NewsAPIException( HttpStatus.BAD_REQUEST,"Article is already published");
         }
-        //if user is JOURNALIST and the article is not submitted
-        if(isJournalist && article.getStatus() != ArticleStatus.SUBMITTED){
+        if(isJournalist && article.getStatus() == ArticleStatus.SUBMITTED){
             throw new ArticleIsAlreadySubmittedException(HttpStatus.BAD_REQUEST, "Article with with ID: " + article.getArticleId() + " is already submitted!");
         }
         article.setStatus(ArticleStatus.SUBMITTED);
@@ -266,8 +253,6 @@ public class ArticleServiceImpl implements ArticleService {
 
             return resultsDTO;
         } catch (Exception ex) {
-            // Εδώ μπορείτε να προσθέσετε την προσαρμοσμένη επεξεργασία του Exception
-            // Π.χ., μπορείτε να καταγράψετε το λάθος στο log και να επιστρέψετε μια κατάλληλη απάντηση
             logger.error("An error occurred while searching articles.", ex);
             throw new NewsAPIException(HttpStatus.NOT_ACCEPTABLE, "Invalid Arguments");
         }
@@ -285,79 +270,15 @@ public class ArticleServiceImpl implements ArticleService {
 
     private ArticleDTO mapToDTO(Article article){
         ArticleDTO postDto = modelMapper.map(article, ArticleDTO.class);
-//        PostDto postDto = new PostDto();
-//        postDto.setId(post.getId());
-//        postDto.setTitle(post.getTitle());
-//        postDto.setDescription(post.getDescription());
-//        postDto.setContent(post.getContent());
         return postDto;
     }
 
     // convert DTO to entity
     private Article mapToEntity(ArticleDTO articleDTO){
         Article post = modelMapper.map(articleDTO, Article.class);
-//        Post post = new Post();
-//        post.setTitle(postDto.getTitle());
-//        post.setDescription(postDto.getDescription());
-//        post.setContent(postDto.getContent());
         return post;
     }
 
-
-
-//
-//    @Override
-//    public List<ArticleResponseWithComments> searchArticlesByNameAndContent(String title, String content) {
-//        List<Article> articles = articleRepository.findByNameContainingAndContentContaining(title, content);
-//        return convertToArticleResponseWithCommentsList(articles);
-//    }
-//
-//    @Override
-//    public ArticleResponseWithComments searchArticlesByName(String title) {
-//        Article article = articleRepository.findByName(title);
-//        if (article != null) {
-//            return convertToArticleResponseWithComments(article);
-//        }
-//        return null;
-//    }
-//
-//    @Override
-//    public List<ArticleResponseWithComments> searchArticlesByContent(String content) {
-//        List<Article> articles = articleRepository.findByContentContaining(content);
-//        return convertToArticleResponseWithCommentsList(articles);
-//    }
-//
-//    private List<ArticleResponseWithComments> convertToArticleResponseWithCommentsList(List<Article> articles) {
-//        // Implement the logic to convert a list of Article entities to a list of ArticleResponseWithComments DTOs
-//        List<ArticleResponseWithComments> responseList = new ArrayList<>();
-//        for (Article article : articles) {
-//            responseList.add(convertToArticleResponseWithComments(article));
-//        }
-//        return responseList;
-//    }
-//
-//    private ArticleResponseWithComments convertToArticleResponseWithComments(Article article) {
-//        ArticleResponseWithComments response = new ArticleResponseWithComments();
-//        response.setArticleId(article.getArticleId());
-//        response.setArticleName(article.getName());
-//        response.setArticleContent(article.getContent());
-//        // Set other properties as needed
-//
-//        // Assuming you have comments associated with the article
-//        List<Comment> comments = article.getComments();
-//        List<CommentResponse> commentResponses = new ArrayList<>();
-//        for (Comment comment : comments) {
-//            CommentResponse commentResponse = new CommentResponse();
-//            commentResponse.setCommentId(comment.getCommentId());
-//            commentResponse.setCommentText(comment.getText());
-//            // Set other comment properties
-//            commentResponses.add(commentResponse);
-//        }
-//        response.setComments(commentResponses);
-//
-//        return response;
-//    }
-//
     @Override
     public List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
         List<Article> articles = new ArrayList<>();

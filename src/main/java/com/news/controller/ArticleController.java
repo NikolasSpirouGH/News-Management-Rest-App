@@ -66,7 +66,7 @@ public class ArticleController {
         return ResponseEntity.ok(rejectedArticle);
     }
 
-    @PreAuthorize("hasAnyAuthority('JOURNALIST', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN')")
     @PutMapping("/publishArticle/{articleId}")
     public ResponseEntity<ArticleDTO> publishArticle(@PathVariable Long articleId) {
         ArticleDTO publishedArticle = articleService.publishArticle(articleId);
@@ -74,6 +74,7 @@ public class ArticleController {
     }
 
     @GetMapping("/searchArticles")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
     public ResponseEntity<List<ArticleDTO>> searchArticles(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String content
@@ -82,13 +83,14 @@ public class ArticleController {
         return ResponseEntity.ok(results);
     }
 
-    // get post by id
     @GetMapping("/getArticleById/{id}")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
     public ResponseEntity<ArticleDTO> getArticleById(@PathVariable long id){
         return ResponseEntity.ok(articleService.getArticleById(id));
     }
 
     @GetMapping("/listArticles")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
     public ResponseEntity<List<Article>> listAllArticles(
             @RequestParam(required = false) ArticleStatus status,
             @RequestParam(required = false) LocalDate startDate,

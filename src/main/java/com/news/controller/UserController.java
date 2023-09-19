@@ -6,7 +6,6 @@ import com.news.security.JwtTokenUtil;
 import com.news.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,7 +35,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
     @PutMapping("/updateSelfUser")
     public ResponseEntity<String> updateUser(
             @Valid @RequestBody UserUpdateRequest userUpdateRequest,
@@ -69,7 +68,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasΑuthority('ADMIN')")
-    @PutMapping("/changeUserPassword/{userId}")
+    @PutMapping("/changePasswordByAdmin/{userId}")
     public ResponseEntity<String> changeUserPasswordByAdmin(
             @PathVariable Long userId,
             @Valid @RequestBody ChangePasswordRequest changePasswordRequest
@@ -78,7 +77,7 @@ public class UserController {
         return new ResponseEntity<>("User password changed successfully.", HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    @PreAuthorize("hasAuthority('ADMIN')  or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
     @PutMapping("/changePasswordByUser")
     public ResponseEntity<String> changePasswordByUser(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody ChangePasswordRequest changePasswordRequest){
         userService.changePasswordByUser(userDetails,changePasswordRequest);
@@ -86,7 +85,7 @@ public class UserController {
     }
 
     @DeleteMapping("/deleteUser/{userId}")
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    @PreAuthorize("hasAuthority('ADMIN')  or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
     public ResponseEntity<String> deleteUser(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails
