@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDate;
+import java.util.Date;
 
 @Setter
 @Getter
@@ -21,10 +22,10 @@ public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "comment_id")
     private Long commentId;
 
     @Column(name="text")
-    @NotBlank(message="Comments content cant be empty")
     private String text;
 
     @Column(name="author_name")
@@ -46,5 +47,7 @@ public class Comment {
     @JsonManagedReference
     private Article article;
 
-
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

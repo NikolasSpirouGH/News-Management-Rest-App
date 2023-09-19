@@ -9,10 +9,8 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserUpdateRequest {
-    private String username;
-    private String firstname;
-    private String lastname;
-    private String rolename;
-
+public class ChangePasswordRequest {
+    String oldPassword;
+    String newPassword;
+    String newPasswordConfirmation;
 }

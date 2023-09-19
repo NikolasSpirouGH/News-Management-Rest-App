@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Setter
@@ -35,7 +36,7 @@ public class Article {
     private String content;
 
     @CreationTimestamp
-    @Column(name="create_at",nullable = false,updatable = false)
+    @Column(name = "created_at")
     private LocalDate createdAt;
 
     @Column(name = "published_at")
@@ -66,5 +67,9 @@ public class Article {
 @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
 @JsonBackReference
     private List<Comment> comments = new ArrayList<>();
+
+@ManyToOne
+@JoinColumn(name = "user_id")
+    private User user;
 
 }

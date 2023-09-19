@@ -1,6 +1,8 @@
 package com.news.exception;
 
+import com.news.payload.ErrorResponse;
 import com.news.payload.ErrorDetails;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -58,6 +60,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(DatabaseException.class)
+    public ResponseEntity<Object> handleDatabaseException(DatabaseException ex) {
+        // You can customize the error response here
+        ErrorResponse errorResponse = new ErrorResponse("Database Error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    @ExceptionHandler(UserRegistrationException.class)
+    public ResponseEntity<Object> handleUserRegistrationException(UserRegistrationException ex) {
+        // Create a custom error response with a user-friendly message
+        ErrorResponse errorResponse = new ErrorResponse("User registration failed", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<Object> handleInvalidDataAccessApiUsageException(InvalidDataAccessApiUsageException ex) {
+        // Create a custom error response with a user-friendly message
+        ErrorResponse errorResponse = new ErrorResponse("Database Error", "An error occurred while processing your request.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Add more exception handlers for other types of exceptions
+
+    // Define a generic exception handler for unhandled exceptions
 
 //    @ExceptionHandler(MethodArgumentNotValidException.class)
 //    public ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception,

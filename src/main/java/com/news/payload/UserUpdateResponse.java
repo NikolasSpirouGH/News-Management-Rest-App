@@ -9,10 +9,11 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserUpdateRequest {
+public class UserUpdateResponse {
+
+    private String message;
     private String username;
     private String firstname;
     private String lastname;
-    private String rolename;
-
+    private String role;
 }

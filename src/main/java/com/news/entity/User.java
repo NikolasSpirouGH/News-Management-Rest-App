@@ -1,34 +1,30 @@
 package com.news.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
-@Data
-@Builder
-@AllArgsConstructor
+@Setter
+@Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "users")
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private UUID id;
+    private Long id;
 
-    @Column(name = "user_name", unique = true, nullable = false)
+    @Column(name = "user_name")
     private String username;
 
     @Column(name = "password")
@@ -36,22 +32,39 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private com.news.entity.UserStatus status;
+    private UserStatus status;
 
-    @Column(name = "role")
+    @ManyToOne // Many users can have the same role
+    @JoinColumn(name = "role_id")
     private Role role;
 
-    @Column(name = "first_name", nullable = false)
+    @Column(name = "first_name")
     private String firstname;
 
     @Column(name = "last_name")
     private String lastname;
 
+    @Column(name = "failed_login_attempts")
+    private int failedLoginAttempts;
+
+    @Column(name = "failed_password_Change_Attempts")
+    private int FailedPasswordChangeAttempts;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Topic> topics = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Article> articles = new ArrayList<>();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        return authorities;
     }
-
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -72,4 +85,3 @@ public class User implements UserDetails {
         return true;
     }
 }
-

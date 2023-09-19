@@ -1,35 +1,109 @@
 package com.news.controller;
 
-import com.news.payload.AuthenticationRequest;
-import com.news.payload.AuthenticationResponse;
-import com.news.payload.UserRegisterRequest;
-import com.news.service.impl.UserServiceImpl;
+import com.news.exception.ResourceNotFoundException;
+import com.news.payload.*;
+import com.news.security.JwtTokenUtil;
+import com.news.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import javax.naming.AuthenticationException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 public class UserController {
 
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
+
+    private final JwtTokenUtil jwtTokenUtil;
+
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(
-            @RequestBody UserRegisterRequest request) {
-
-        return ResponseEntity.ok(userServiceImpl.register(request));
+    public ResponseEntity<RegisterResponse> registerUser(@Valid @RequestBody UserDTO userDTO) {
+        RegisterResponse registeredUser = userService.registerUser(userDTO);
+        return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(
-            @RequestBody AuthenticationRequest request) {
-
-        return ResponseEntity.ok(userServiceImpl.authenticate(request));
+    @PostMapping("/auth/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthRequest request) throws AuthenticationException {
+        AuthResponse response = userService.authenticateUser(request);
+        return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody TokenRequestRefresh request) {
+
+        final String oldToken = request.getOldToken();
+        if (jwtTokenUtil.isTokenExpired(oldToken)) {
+            return ResponseEntity.badRequest().body("Token is expired");
+        }
+
+        final String newToken = jwtTokenUtil.refreshToken(oldToken);
+        if (newToken == null) {
+            return ResponseEntity.badRequest().body("Token refresh failed");
+        }
+
+        return ResponseEntity.ok(newToken);
+    }
+
+
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    @PutMapping("/updateSelfUser")
+    public ResponseEntity<String> updateUser(
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        userService.updateUser(userDetails,userUpdateRequest);
+        return new ResponseEntity<>("User updated with usernmame" +" " + userDetails.getUsername(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/updateUserByAdmin")
+    public ResponseEntity<String> updateUserByAdmin(
+            @RequestParam Long id,
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest
+    ) {
+        userService.updateUserAdmin(id,userUpdateRequest);
+        return new ResponseEntity<>("User updated with usernmame" +" " + userUpdateRequest.getUsername(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/changeStatus/{userId}/{status}")
+    public ResponseEntity<String> changeUserStatus(@PathVariable Long userId,@PathVariable String status) {
+        System.out.println("help");
+        try {
+            userService.changeUserStatus(userId,status);
+            return new ResponseEntity<>("User status changed successfully.", HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>("User not found with id: " + userId, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/updateUserByAdmin")
+    public ResponseEntity<String> changePassword(
+            @RequestParam Long id,
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest
+    ) {
+        userService.updateUserAdmin(id,userUpdateRequest);
+        return new ResponseEntity<>("User updated with usernmame" +" " + userUpdateRequest.getUsername(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    @PutMapping("/changePasswordByUser")
+    public ResponseEntity<String> changePasswordByUser(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody ChangePasswordRequest changePasswordRequest){
+
+        userService.changePassword(userDetails,changePasswordRequest);
+        return new ResponseEntity<>("Password changed.", HttpStatus.OK);
+    }
+
+    @PreAuthorize(("has"))
 }
-

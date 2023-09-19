@@ -10,6 +10,8 @@ import java.util.List;
 public interface CommentService {
     CommentDTO createComment(long articleId, CommentDTO request);
 
+    CommentDTO updateComment(Long articleId, long commentId, CommentDTO commentRequest);
+
     List<Comment> getCommentsByArticleId(Long articleId);
 
     Comment getCommentById(Long commentId);

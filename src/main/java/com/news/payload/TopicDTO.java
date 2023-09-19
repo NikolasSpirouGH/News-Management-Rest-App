@@ -3,6 +3,8 @@ package com.news.payload;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,4 +17,8 @@ public class TopicDTO {
     private String name;
 
     private String parentName;
+
+    private LocalDate creationDate;
+
+    private String username;
 }

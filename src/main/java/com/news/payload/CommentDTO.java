@@ -7,12 +7,8 @@ import lombok.Data;
 public class CommentDTO {
 
     private Long commentId;
-
     private Long articleId;
-
     @NotBlank
     private String text;
-
-    @NotBlank
-    private String authorName;
+    private String username;
 }
