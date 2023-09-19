@@ -3,6 +3,8 @@ package com.news.service;
 import com.news.entity.ArticleStatus;
 import com.news.payload.ArticleDTO;
 import com.news.entity.Article;
+import com.news.payload.RejectArticleRequest;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
@@ -16,13 +18,13 @@ public interface ArticleService {
 
     ArticleDTO createArticle(ArticleDTO request, UserDetails userDetails);
 
-    ArticleDTO updateArticle(ArticleDTO request, Long articleId);
+    ArticleDTO updateArticle(ArticleDTO request, Long articleId, UserDetails userDetails);
 
-    ArticleDTO submitArticle(Long id);
+    ArticleDTO submitArticle(Long id, UserDetails userDetails);
 
     ArticleDTO approveArticle(Long id);
 
-    ArticleDTO rejectArticle(Long id, String rejectionReason);
+    ArticleDTO rejectArticle(Long id, RejectArticleRequest rejectArticleRequest);
 
     ArticleDTO publishArticle(Long id);
 

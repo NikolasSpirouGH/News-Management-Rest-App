@@ -22,9 +22,7 @@ import javax.naming.AuthenticationException;
 public class UserController {
 
     private final UserService userService;
-
     private final JwtTokenUtil jwtTokenUtil;
-
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> registerUser(@Valid @RequestBody UserDTO userDTO) {
@@ -37,23 +35,6 @@ public class UserController {
         AuthResponse response = userService.authenticateUser(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody TokenRequestRefresh request) {
-
-        final String oldToken = request.getOldToken();
-        if (jwtTokenUtil.isTokenExpired(oldToken)) {
-            return ResponseEntity.badRequest().body("Token is expired");
-        }
-
-        final String newToken = jwtTokenUtil.refreshToken(oldToken);
-        if (newToken == null) {
-            return ResponseEntity.badRequest().body("Token refresh failed");
-        }
-
-        return ResponseEntity.ok(newToken);
-    }
-
 
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
     @PutMapping("/updateSelfUser")
@@ -87,23 +68,35 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PutMapping("/updateUserByAdmin")
-    public ResponseEntity<String> changePassword(
-            @RequestParam Long id,
-            @Valid @RequestBody UserUpdateRequest userUpdateRequest
+    @PreAuthorize("hasΑuthority('ADMIN')")
+    @PutMapping("/changeUserPassword/{userId}")
+    public ResponseEntity<String> changeUserPasswordByAdmin(
+            @PathVariable Long userId,
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest
     ) {
-        userService.updateUserAdmin(id,userUpdateRequest);
-        return new ResponseEntity<>("User updated with usernmame" +" " + userUpdateRequest.getUsername(), HttpStatus.OK);
+        userService.changePasswordByAdmin(userId, changePasswordRequest);
+        return new ResponseEntity<>("User password changed successfully.", HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
     @PutMapping("/changePasswordByUser")
     public ResponseEntity<String> changePasswordByUser(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody ChangePasswordRequest changePasswordRequest){
-
-        userService.changePassword(userDetails,changePasswordRequest);
+        userService.changePasswordByUser(userDetails,changePasswordRequest);
         return new ResponseEntity<>("Password changed.", HttpStatus.OK);
     }
 
-    @PreAuthorize(("has"))
+    @DeleteMapping("/deleteUser/{userId}")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('VISITOR') or hasAuthority('EDITOR') or hasAuthority('JOURNALIST')")
+    public ResponseEntity<String> deleteUser(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            userService.deleteUser(userId, userDetails);
+            return new ResponseEntity<>("User deleted successfully.", HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>("User not found with id: " + userId, HttpStatus.NOT_FOUND);
+        }
+    }
+
 }

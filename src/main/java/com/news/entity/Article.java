@@ -9,7 +9,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Setter
@@ -51,25 +50,25 @@ public class Article {
     private String rejectionReason;
 
     @ManyToMany
-@JoinTable(
-        name = "article_topic_map",
-        joinColumns = @JoinColumn(
-                name = "article_id",
-                referencedColumnName = "article_id"
-        ),
-        inverseJoinColumns = @JoinColumn(
-                name="topic_id",
-                referencedColumnName = "topic_id"
-        )
-)
+    @JoinTable(
+            name = "article_topic_map",
+            joinColumns = @JoinColumn(
+                    name = "article_id",
+                    referencedColumnName = "article_id"
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name="topic_id",
+                    referencedColumnName = "topic_id"
+            )
+    )
     private List<Topic> topics;
 
-@OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-@JsonBackReference
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
     private List<Comment> comments = new ArrayList<>();
 
-@ManyToOne
-@JoinColumn(name = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
 }

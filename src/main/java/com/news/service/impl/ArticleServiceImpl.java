@@ -5,6 +5,8 @@ import com.news.entity.Topic;
 import com.news.entity.User;
 import com.news.exception.InvalidUserNameException;
 import com.news.payload.ArticleDTO;
+import com.news.payload.ArticleIsAlreadySubmittedException;
+import com.news.payload.RejectArticleRequest;
 import com.news.payload.TopicDTO;
 import com.news.repository.ArticleRepository;
 import com.news.repository.TopicRepository;
@@ -40,7 +42,6 @@ public class ArticleServiceImpl implements ArticleService {
     private final TopicRepository topicRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final JwtTokenUtil jwtTokenUtil;
     private static final Logger logger = LoggerFactory.getLogger(ArticleService.class);
 
     @Override
@@ -85,29 +86,40 @@ public class ArticleServiceImpl implements ArticleService {
         }
         resultArticle.setTopics(topicsList);
         resultArticle.setCreatedAt(LocalDate.now());
-
+        resultArticle.setUsername(userDetails.getUsername());
         return resultArticle;
     }
 
     @Override
     @Transactional
-    public ArticleDTO updateArticle(ArticleDTO articleDTO, Long id) {
-        // get post by id from the database
+    public ArticleDTO updateArticle(ArticleDTO articleDTO, Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        boolean isJournalist = false;
+
+        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("JOURNALIST"))) {
+            String articleUsername = userDetails.getUsername();
+            User articleUser = userRepository.findByUsername(articleUsername);
+            if (articleUser == null) {
+                throw new AccessDeniedException("You are not authorized to update an article for another user.");
+            }
+            if (!userDetails.getUsername().equals(articleUser.getUsername())) {
+                throw new AccessDeniedException("You are not authorized to create an article for another user.");
+            }
+            isJournalist = true;
+        }
         Article article = articleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Article", "id", id));
-
-        if (article == null) {
-                logger.warn("Article with ID {} not found.", id);
-                throw new ResourceNotFoundException("Article","id",articleDTO.getArticleId());
-            }
-
-            if (article.getStatus() == ArticleStatus.PUBLISHED) {
-                logger.warn("Article with ID {} is already published.", id);
-                throw new NewsAPIException( HttpStatus.BAD_REQUEST,"Article is already published");
-            }
+        //if the article is already published
+        if (article.getStatus() == ArticleStatus.PUBLISHED) {
+            logger.warn("Article with ID {} is already published.", id);
+            throw new NewsAPIException( HttpStatus.BAD_REQUEST,"Article is already published");
+        }
+        //if user is JOURNALIST and the article is not submitted
+        if(isJournalist && article.getStatus() == ArticleStatus.SUBMITTED){
+            throw new ArticleIsAlreadySubmittedException(HttpStatus.BAD_REQUEST, "Article with with ID: " + article.getArticleId() + " is already submitted!");
+        }
         List<Topic> topics = new ArrayList<>();
         for (TopicDTO topicDTO : articleDTO.getTopics()) {
             Topic topic = topicRepository.findByName(topicDTO.getName());
-            if (topic != null) {
+            if (topic != null && !topics.contains(topic)) {
                 topics.add(topic);
             } else {
                 logger.error("Topic with name '{}' doesn't exist", topicDTO.getName());
@@ -117,28 +129,62 @@ public class ArticleServiceImpl implements ArticleService {
         article.setName(articleDTO.getName());
         article.setContent(articleDTO.getContent());
         article.setTopics(topics);
-        Article updatedPost = articleRepository.save(article);
-        return mapToDTO(updatedPost);
+        Article updatedArticle = articleRepository.save(article);
+        ArticleDTO updatedArticleDTO = modelMapper.map(updatedArticle,ArticleDTO.class);
+        List<TopicDTO> topicsListDTO = new ArrayList<>();
+        for(Topic topic : updatedArticle.getTopics()) {
+            String username = topic.getUser().getUsername();
+            TopicDTO topicDTO = modelMapper.map(topic, TopicDTO.class);
+            topicDTO.setUsername(username);
+            topicsListDTO.add(topicDTO);
+        }
+        updatedArticleDTO.setUsername(userDetails.getUsername());
+        updatedArticleDTO.setTopics(topicsListDTO);
+
+        return updatedArticleDTO;
     }
 
     @Override
     @Transactional
-    public ArticleDTO submitArticle(Long articleId) {
-        ArticleDTO articleDTO = getArticleById(articleId);
+    public ArticleDTO submitArticle(Long articleId, @AuthenticationPrincipal UserDetails userDetails) {
 
-        Article article = mapToEntity(articleDTO);
-        if (article == null) {
-            throw new ResourceNotFoundException("Article","id",article.getArticleId());
-        }
-        if (article.getStatus() != ArticleStatus.CREATED) {
-            throw new NewsAPIException(HttpStatus.BAD_REQUEST, "This article is not in create state");
-        }
+        // get post by id from the database
+        Article article = articleRepository.findById(articleId).orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
+        ArticleDTO articleDTO = modelMapper.map(article, ArticleDTO.class);
+        //first we have to complete all the Authorization logic
+        // Check if the user has the role "JOURNALIST" and is the same as the article's creator
+        boolean isJournalist = false;
+        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("JOURNALIST"))) {
+            // Retrieve the user_id from the ArticleDTO
+            String articleUsername = articleDTO.getUsername(); // Assuming there is a getUserId() method in ArticleDTO
 
+            User articleUser = userRepository.findByUsername(articleUsername);
+            if (articleUser == null) {
+                // If the user with the specified username doesn't exist, throw an exception
+                //throw new UsernameNotFoundException(articleUsername);
+                throw new AccessDeniedException("You are not authorized to update an article for another user.");
+            }
+            // Check if the username of the fetched user matches the username from the token
+            if (!userDetails.getUsername().equals(articleUser.getUsername())) {
+                // Return an unauthorized response if the usernames don't match
+                throw new AccessDeniedException("You are not authorized to create an article for another user.");
+                //return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            isJournalist = true;
+        }
+        //if the article is already published
+        if (article.getStatus() == ArticleStatus.PUBLISHED) {
+            logger.warn("Article with ID {} is already published.", articleId);
+            throw new NewsAPIException( HttpStatus.BAD_REQUEST,"Article is already published");
+        }
+        //if user is JOURNALIST and the article is not submitted
+        if(isJournalist && article.getStatus() != ArticleStatus.SUBMITTED){
+            throw new ArticleIsAlreadySubmittedException(HttpStatus.BAD_REQUEST, "Article with with ID: " + article.getArticleId() + " is already submitted!");
+        }
         article.setStatus(ArticleStatus.SUBMITTED);
         logger.info("Article with ID {} submitted successfully.", articleId);
-
         articleRepository.save(article);
-        return mapToDTO(article);
+        return modelMapper.map(article,ArticleDTO.class);
     }
 
     @Override
@@ -161,7 +207,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public ArticleDTO rejectArticle(Long id, String rejectionReason) {
+    public ArticleDTO rejectArticle(Long id, RejectArticleRequest rejectArticleRequest) {
         // Get the article by ID from the database
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", "id", id));
@@ -170,12 +216,12 @@ public class ArticleServiceImpl implements ArticleService {
             throw new NewsAPIException(HttpStatus.BAD_REQUEST, "This article is not in create state");
         }
         // Set the rejection reason
-        article.setRejectionReason(rejectionReason);
+        article.setRejectionReason(rejectArticleRequest.getRejectionReason());
         // Set the status to REJECTED
         article.setStatus(ArticleStatus.REJECTED);
         // Save the rejected article
         articleRepository.save(article);
-        logger.info("Article with ID {} has been rejected with reason: {}", id, rejectionReason);
+        logger.info("Article with ID {} has been rejected with reason: {}", id, rejectArticleRequest.getRejectionReason());
         return mapToDTO(article);
     }
 

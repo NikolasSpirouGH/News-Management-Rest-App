@@ -33,6 +33,10 @@ public class Topic {
     @Column(name = "parent_name")
     private String parentName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TopicStatus status;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

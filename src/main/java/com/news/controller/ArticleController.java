@@ -3,6 +3,7 @@ package com.news.controller;
 import com.news.entity.Article;
 import com.news.entity.ArticleStatus;
 import com.news.payload.ArticleDTO;
+import com.news.payload.RejectArticleRequest;
 import com.news.service.ArticleService;
 import com.news.service.CommentService;
 import jakarta.annotation.security.RolesAllowed;
@@ -29,41 +30,43 @@ public class ArticleController {
 
     private final ArticleService articleService;
     private static final Logger logger = LoggerFactory.getLogger(ArticleController.class);
-
-    @PreAuthorize("hasAuthority('JOURNALIST')")
     @PostMapping("/saveArticle")
-    public ResponseEntity<ArticleDTO> saveArticle(@Valid @RequestBody ArticleDTO request,  @AuthenticationPrincipal UserDetails userDetails) {
-        ArticleDTO articleResponse = articleService.createArticle(request,userDetails);
+    @PreAuthorize("hasAuthority('JOURNALIST')")
+    public ResponseEntity<ArticleDTO> saveArticle(@Valid @RequestBody ArticleDTO request , @AuthenticationPrincipal UserDetails userDetails) {
+        ArticleDTO articleResponse = articleService.createArticle(request, userDetails);
         return new ResponseEntity<>(articleResponse, HttpStatus.CREATED);
     }
 
     @PutMapping("/updateArticle/{articleId}")
-    public ResponseEntity<ArticleDTO> updatePost(@Valid @RequestBody ArticleDTO articleDTO, @PathVariable(name="articleId") Long articleId){
-        ArticleDTO articleResponse = articleService.updateArticle(articleDTO, articleId);
+    @PreAuthorize("hasAnyAuthority( 'JOURNALIST','EDITOR', 'ADMIN')")
+    public ResponseEntity<ArticleDTO> updateArticle(@Valid @RequestBody ArticleDTO articleDTO, @PathVariable(name="articleId") Long articleId, @AuthenticationPrincipal UserDetails userDetails){
+        ArticleDTO articleResponse = articleService.updateArticle(articleDTO, articleId,  userDetails);
         return ResponseEntity.ok(articleResponse);
     }
-    @PreAuthorize("hasAuthority('JOURNALIST')")
+
     @PutMapping("/submitArticle/{articleId}")
-    public ResponseEntity<ArticleDTO> submitArticle(@PathVariable Long articleId) {
-        ArticleDTO articleResponse = articleService.submitArticle(articleId);
+    @PreAuthorize("hasAnyAuthority( 'JOURNALIST','EDITOR', 'ADMIN')")
+    public ResponseEntity<ArticleDTO> submitArticle(@PathVariable Long articleId, @AuthenticationPrincipal UserDetails userDetails) {
+        ArticleDTO articleResponse = articleService.submitArticle(articleId, userDetails);
         return ResponseEntity.ok(articleResponse);
     }
-    @PreAuthorize("hasAuthority('JOURNALIST')")
+    @PreAuthorize("hasAnyAuthority('EDITOR', 'ADMIN')")
     @PutMapping("/approveArticle/{articleId}")
     public ResponseEntity<ArticleDTO> approveArticle(@PathVariable Long articleId) {
         ArticleDTO articleResponse = articleService.approveArticle(articleId);
         return ResponseEntity.ok(articleResponse);
     }
 
-    @PutMapping("/rejectArticle/{articleId}/rejectReason")
+    @PreAuthorize("hasAnyAuthority('EDITOR', 'ADMIN')")
+    @PutMapping("/rejectArticle/{articleId}")
     public ResponseEntity<ArticleDTO> rejectArticle(
             @PathVariable Long articleId,
-            @RequestParam String rejectionReason) {
-
-        ArticleDTO rejectedArticle = articleService.rejectArticle(articleId, rejectionReason);
+            @Valid @RequestBody RejectArticleRequest rejectArticleRequest) {
+        ArticleDTO rejectedArticle = articleService.rejectArticle(articleId, rejectArticleRequest);
         return ResponseEntity.ok(rejectedArticle);
     }
-    @PreAuthorize("hasAuthority('JOURNALIST')")
+
+    @PreAuthorize("hasAnyAuthority('JOURNALIST', 'ADMIN')")
     @PutMapping("/publishArticle/{articleId}")
     public ResponseEntity<ArticleDTO> publishArticle(@PathVariable Long articleId) {
         ArticleDTO publishedArticle = articleService.publishArticle(articleId);
@@ -92,9 +95,7 @@ public class ArticleController {
             @RequestParam(required = false) LocalDate endDate
     ) {
         List<Article> articles = articleService.listAllArticlesWithFilters(status, startDate, endDate);
-
         return new ResponseEntity<>(articles, HttpStatus.OK);
     }
-
-    }
+}
 

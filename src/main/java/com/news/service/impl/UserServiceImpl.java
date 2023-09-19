@@ -41,13 +41,11 @@ public class UserServiceImpl implements UserService{
         if (userRepository.findByUsername(userDTO.getUsername()) != null) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-
         String password = userDTO.getPassword();
         String cPassword = userDTO.getPasswordConfirmation();
         if (!isValidPassword(password) && !cPassword.equals(password)) {
             throw new InvalidPasswordException("Invalid password format");
         }
-
         // Ελέγξτε το όνομα χρήστη
         String username = userDTO.getUsername();
         if (!isValidUsername(username)) {
@@ -61,7 +59,6 @@ public class UserServiceImpl implements UserService{
         // Map the RoleDTO to a Role entity
         Role role = roleRepository.findByName(userDTO.getRoleName());
         user.setRole(role);
-        user.setStatus(UserStatus.INACTIVE);
         user.setUsername(username);
         user.setFirstname(userDTO.getFirstname());
         user.setLastname(userDTO.getLastname());
@@ -79,21 +76,16 @@ public class UserServiceImpl implements UserService{
             if (user != null && user.getStatus() == UserStatus.INACTIVE) {
                 throw new UserInactiveException("User is inactive");
             }
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(), request.getPassword()
                     )
             );
-
             user = (User) authentication.getPrincipal();
             String accessToken = jwtUtil.generateAccessToken(user);
-
             // Invalidate the user's old token if they have one
             jwtUtil.invalidateUserToken(user.getUsername());
-
             resetFailedLoginAttempts(user);
-
             return new AuthResponse(user.getUsername(), accessToken);
 
         } catch (BadCredentialsException ex) {
@@ -190,13 +182,29 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public void changePassword(String username, ChangePasswordRequest changePasswordRequest) {
-        User user = userRepository.findByUsername(username);
+    public void changePasswordByAdmin(Long userId, ChangePasswordRequest changePasswordRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: ","user:", userId));
+        String newPassword = changePasswordRequest.getNewPassword();
+        String newPasswordConfirmation = changePasswordRequest.getNewPasswordConfirmation();
+
+        if (!newPassword.equals(newPasswordConfirmation)) {
+            throw new PasswordConfirmationException("New password and confirmation do not match");
+        }
+        user.setPassword(encoder.encode(newPassword));
+        jwtUtil.invalidateUserToken(user.getUsername());
+        userRepository.save(user);
+    }
+
+    @Override
+    public void changePasswordByUser(UserDetails userDetails, ChangePasswordRequest changePasswordRequest) {
+        User user = userRepository.findByUsername(userDetails.getUsername());
         if (user == null) {
             throw new InvalidUserNameException("User not found");
         }
         String oldPassword = changePasswordRequest.getOldPassword();
         String newPassword = changePasswordRequest.getNewPassword();
+        String newPasswordConfirmation = changePasswordRequest.getNewPasswordConfirmation();
         if (!encoder.matches(oldPassword, user.getPassword())) {
             // Passwords do not match; increment failed attempts counter
             incrementFailedPasswordChangeAttempts(user);
@@ -206,17 +214,34 @@ public class UserServiceImpl implements UserService{
             }
             throw new InvalidPasswordException("Old password is incorrect");
         }
+        // Check if the new password and confirmation match
+        if (!newPassword.equals(newPasswordConfirmation)) {
+            throw new PasswordConfirmationException("New password and confirmation do not match");
+        }
         // Reset failed password change attempts on successful password change
         resetFailedPasswordChangeAttempts(user);
         // Update the user's password
         user.setPassword(encoder.encode(newPassword));
         // Invalidate the user's current token
-        jwtUtil.invalidateUserToken(username);
+        jwtUtil.invalidateUserToken(userDetails.getUsername());
         // Save the updated user
         userRepository.save(user);
     }
 
-    // Helper method to increment failed password change attempts
+    @Override
+    public void deleteUser(Long userId, UserDetails userDetails) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: ","user " , userId));
+
+        if (!userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))
+                && !userDetails.getUsername().equals(user.getUsername())) {
+            throw new UnauthorizedException("You are not authorized to delete this user.");
+        }
+        jwtUtil.invalidateUserToken(user.getUsername());
+        userRepository.delete(user);
+    }
+
     private void incrementFailedPasswordChangeAttempts(User user) {
         user.setFailedPasswordChangeAttempts(user.getFailedPasswordChangeAttempts() + 1);
         userRepository.save(user);
