@@ -3,7 +3,6 @@ package com.news.service.impl;
 import com.news.entity.Article;
 import com.news.entity.Topic;
 import com.news.entity.User;
-import com.news.exception.InvalidUserNameException;
 import com.news.payload.ArticleDTO;
 import com.news.payload.ArticleIsAlreadySubmittedException;
 import com.news.payload.RejectArticleRequest;
@@ -11,9 +10,7 @@ import com.news.payload.TopicDTO;
 import com.news.repository.ArticleRepository;
 import com.news.repository.TopicRepository;
 import com.news.repository.UserRepository;
-import com.news.security.JwtTokenUtil;
 import com.news.service.ArticleService;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import com.news.exception.NewsAPIException;
 import com.news.exception.ResourceNotFoundException;
@@ -23,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -230,31 +226,57 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<ArticleDTO> searchArticles(String name, String content) {
-        try {
-            List<Article> results = new ArrayList<>();
+    public List<ArticleDTO> searchArticlesWithFilters(
+            UserDetails userDetails,
+            String name,
+            String content
+    ) {
+        List<Article> results = new ArrayList<>();
 
-            if (name != null && content != null) {
-                logger.debug("Searching articles by both title and content");
-                results = articleRepository.findByNameContainingAndContentContaining(name, content);
-            } else if (name != null) {
-                logger.debug("Searching articles by title");
-                results.add(articleRepository.findByNameContaining(name));
-            } else if (content != null) {
-                logger.debug("Searching articles by content");
-                results = articleRepository.findByContentContaining(content);
+        if (userDetails != null) {
+            if (userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("JOURNALIST"))) {
+                User journalistUser = userRepository.findByUsername(userDetails.getUsername());
+                results = filterArticles(journalistUser.getId(), name, content);
+            } else if (userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("EDITOR")) || userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ADMIN"))) {
+                results = filterArticles(null, name, content);
             } else {
-                logger.warn("Full searching");
-                results = articleRepository.findAll();
+                throw new AccessDeniedException("Bad request");
             }
-            List<ArticleDTO> resultsDTO = results.stream()
-                    .map(this::mapToDTO)
-                    .collect(Collectors.toList());
+        } else {
+            results = filterArticles(null, name, content);
+        }
 
-            return resultsDTO;
-        } catch (Exception ex) {
-            logger.error("An error occurred while searching articles.", ex);
-            throw new NewsAPIException(HttpStatus.NOT_ACCEPTABLE, "Invalid Arguments");
+        List<ArticleDTO> resultsDTO = results.stream()
+                .map(article -> modelMapper.map(article, ArticleDTO.class))
+                .collect(Collectors.toList());
+
+        return resultsDTO;
+    }
+
+    private List<Article> filterArticles(Long userId, String name, String content) {
+        if (userId != null) {
+            if (name != null && content != null) {
+                return articleRepository.findByNameContainingAndContentContainingAndUserId(name, content, userId);
+            } else if (name != null) {
+                return articleRepository.findByNameContainingAndUserId(name, userId);
+            } else if (content != null) {
+                return articleRepository.findByContentContainingAndUserId(content, userId);
+            } else {
+                return articleRepository.findByUserId(userId);
+            }
+        } else {
+            if (name != null && content != null) {
+                return articleRepository.findByNameContainingAndContentContaining(name, content);
+            } else if (name != null) {
+                return (List<Article>) articleRepository.findByNameContaining(name);
+            } else if (content != null) {
+                return articleRepository.findByContentContaining(content);
+            } else {
+                return articleRepository.findAll();
+            }
         }
     }
 
@@ -265,7 +287,8 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public ArticleDTO getArticleById(Long articleId) {
         Article article =  articleRepository.findById(articleId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", articleId));
-        return mapToDTO(article);
+        ArticleDTO articleDTO = modelMapper.map(article,ArticleDTO.class);
+        return articleDTO;
     }
 
     private ArticleDTO mapToDTO(Article article){
@@ -273,37 +296,129 @@ public class ArticleServiceImpl implements ArticleService {
         return postDto;
     }
 
-    // convert DTO to entity
     private Article mapToEntity(ArticleDTO articleDTO){
         Article post = modelMapper.map(articleDTO, Article.class);
         return post;
     }
 
     @Override
-    public List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
-        List<Article> articles = new ArrayList<>();
+    public List<ArticleDTO> getArticlesWithFilters(
+            UserDetails userDetails,
+            ArticleStatus status,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        List<Article> allArticles = new ArrayList<>();
 
+        if (userDetails != null) {
+            if (userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("JOURNALIST"))) {
+                User journalistUser = userRepository.findByUsername(userDetails.getUsername());
+                allArticles = filterArticlesForJournalist(journalistUser.getId(), status, startDate, endDate);
+            } else if (userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("EDITOR")) || userDetails.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ADMIN"))) {
+                allArticles = filterArticlesForEditorOrAdmin(status, startDate, endDate);
+            } else {
+                throw new AccessDeniedException("Bad request");
+            }
+        } else {
+            allArticles = filterArticlesForUnauthenticatedUser(status, startDate, endDate);
+        }
+
+        List<ArticleDTO> allArticlesDTO = allArticles.stream()
+                .map(article -> modelMapper.map(article, ArticleDTO.class))
+                .collect(Collectors.toList());
+
+        return allArticlesDTO;
+    }
+
+    private List<Article> filterArticlesForJournalist(Long journalistUserId, ArticleStatus status, LocalDate startDate, LocalDate endDate) {
         if (status != null && startDate != null && endDate != null) {
-            // Filter by status and date range
-            articles = articleRepository.findByStatusAndCreatedAtBetweenOrStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(
+            return articleRepository.findByUserIdAndStatusAndCreatedAtBetweenOrUserIdAndStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(
+                    journalistUserId, status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX),
+                    journalistUserId, status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
+        } else if (status != null) {
+            return articleRepository.findByUserIdAndStatusOrderByStatusDescCreatedAtDesc(journalistUserId, status);
+        } else if (startDate != null && endDate != null) {
+            return articleRepository.findByUserIdAndCreatedAtBetweenOrderByStatusDescCreatedAtDesc(
+                    journalistUserId, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
+        } else {
+            return articleRepository.findByUserIdOrderByStatusDescCreatedAtDesc(journalistUserId);
+        }
+    }
+
+    private List<Article> filterArticlesForEditorOrAdmin(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
+        if (status != null && startDate != null && endDate != null) {
+            return articleRepository.findByStatusAndCreatedAtBetweenOrStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(
                     status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX),
                     status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
         } else if (status != null) {
-            // Filter by status only
-            articles = articleRepository.findByStatusOrderByStatusDescCreatedAtDesc(status);
+            return articleRepository.findByStatusOrderByStatusDescCreatedAtDesc(status);
         } else if (startDate != null && endDate != null) {
-            // Filter by date range only
-            articles = articleRepository.findByCreatedAtBetweenOrderByStatusDescCreatedAtDesc(
+            return articleRepository.findByCreatedAtBetweenOrderByStatusDescCreatedAtDesc(
                     startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
         } else {
-            // No filters, return all articles
-            articles = articleRepository.findAllByOrderByStatusDescCreatedAtDesc();
+            return articleRepository.findAllByOrderByStatusDescCreatedAtDesc();
         }
-
-        return articles;
     }
 
+    private List<Article> filterArticlesForUnauthenticatedUser(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
+        if (status != null && startDate != null && endDate != null) {
+            return articleRepository.findByStatusAndCreatedAtBetweenOrStatusAndPublishedAtBetweenOrderByStatusDescCreatedAtDesc(
+                    status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX),
+                    status, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
+        } else if (status != null) {
+            return articleRepository.findByStatusOrderByStatusDescCreatedAtDesc(status);
+        } else if (startDate != null && endDate != null) {
+            return articleRepository.findByCreatedAtBetweenOrderByStatusDescCreatedAtDesc(
+                    startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
+        } else {
+            return articleRepository.findAllByStatusOrderByStatusDescCreatedAtDesc(ArticleStatus.PUBLISHED);
+        }
+    }
+
+    @Override
+    public List<ArticleDTO> getArticles(@AuthenticationPrincipal UserDetails userDetails){
+        List<Article> allArticles = articleRepository.findAllByStatus(ArticleStatus.PUBLISHED);
+        List<ArticleDTO> allArticlesDTO = new ArrayList<>();
+        if (userDetails != null) {
+            if(userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("JOURNALIST"))) {
+            User journalistUser = userRepository.findByUsername(userDetails.getUsername());
+            allArticles = articleRepository.findAllByStatus(ArticleStatus.PUBLISHED);
+            allArticles.addAll(articleRepository.findByIdAAndNotStatus(journalistUser.getId(), ArticleStatus.PUBLISHED));
+            allArticlesDTO = new ArrayList<>();
+            for (Article article : allArticles) {
+                allArticlesDTO.add(modelMapper.map(article, ArticleDTO.class));
+            }
+            return allArticlesDTO;
+        } else if (userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("EDITOR")) || userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ADMIN"))) {
+
+            allArticles = articleRepository.findAllByStatus(ArticleStatus.PUBLISHED);
+
+            allArticlesDTO = new ArrayList<>();
+            for (Article article : allArticles) {
+                allArticlesDTO.add(modelMapper.map(article, ArticleDTO.class));
+            }
+            return allArticlesDTO;
+
+        }else {
+                throw new AccessDeniedException("Bad request");
+            }
+        } else  {
+            allArticles = articleRepository.findAllByStatus(ArticleStatus.PUBLISHED);
+            for (Article article : allArticles) {
+                allArticlesDTO.add(modelMapper.map(article, ArticleDTO.class));
+            }
+            return allArticlesDTO;
+        }
+
+    }
 
 }
+
 
 

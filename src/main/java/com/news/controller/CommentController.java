@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/comments")
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ public class CommentController {
 
     private final CommentService commentService;
     @PostMapping("/createComment/{articleId}")
-    @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN', 'VISITOR', 'JOURNALIST')")
+//    @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN', 'VISITOR', 'JOURNALIST')")
     public ResponseEntity<CommentDTO> createComment(@PathVariable(value = "articleId") long articleId,
                                                     @Valid @RequestBody CommentDTO commentDto, @AuthenticationPrincipal UserDetails userDetails){
         return new ResponseEntity<>(commentService.createComment(articleId, commentDto, userDetails), HttpStatus.CREATED);
@@ -27,26 +29,35 @@ public class CommentController {
     @PutMapping("/comments/updateComment/{id}")
     @PreAuthorize("hasAnyAuthority('EDITOR', 'ADMIN')")
     public ResponseEntity<CommentDTO> updateComment(@PathVariable(value = "id") Long commentId,
-                                                    @Valid @RequestBody CommentDTO commentDto, @AuthenticationPrincipal UserDetails userDetails){
+                                                    @Valid @RequestBody CommentDTO commentDto){
         CommentDTO updatedComment = commentService.updateComment(commentId, commentDto);
         return new ResponseEntity<>(updatedComment, HttpStatus.OK);
     }
 
-    @PutMapping("/comments/approveComment/{id}")
+    @PutMapping("/approveComment/{id}")
     @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN')")
-    public ResponseEntity<CommentDTO> approveComment(@PathVariable(value = "id") Long commentId,
-                                                     @Valid @RequestBody CommentDTO commentDto){
+    public ResponseEntity<String> approveComment(@PathVariable(value = "id") Long commentId){
         CommentDTO updatedComment = commentService.approveComment(commentId);
-        return new ResponseEntity<>(updatedComment, HttpStatus.OK);
+        return new ResponseEntity<>("Comment Approved with id" + " " +  commentId, HttpStatus.OK);
     }
 
-    @PutMapping("/comments/rejectComment/{id}")
+    @PutMapping("/rejectComment/{id}")
     @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN')")
-    public ResponseEntity<CommentDTO> rejectComment(@PathVariable(value = "id") Long commentId,
-                                                    @Valid @RequestBody CommentDTO commentDto){
-        CommentDTO updatedComment = commentService.rejectComment(commentId);
-        return new ResponseEntity<>(updatedComment, HttpStatus.OK);
+    public ResponseEntity<String> rejectComment(@PathVariable(value = "id") Long commentId){
+        return commentService.rejectComment(commentId);
     }
+    @GetMapping("/getCommentsByArticleId/{id}")
+    public ResponseEntity<List<CommentDTO>> getCommentsByArticleId(@PathVariable(value = "id")Long articleId, @AuthenticationPrincipal UserDetails userDetails){
+        System.out.println("GDGDS");
+        return ResponseEntity.ok(commentService.getCommentsByArticleId(articleId,  userDetails));
+    }
+
+    @GetMapping("/getCommentById/{id}")
+    @PreAuthorize("hasAnyAuthority( 'EDITOR', 'ADMIN')")
+    public CommentDTO getCommentById(@PathVariable(value = "id") Long commentId){
+        return commentService.getCommentById(commentId);
+    }
+
 }
 
 

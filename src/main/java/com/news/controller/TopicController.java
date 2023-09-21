@@ -1,7 +1,6 @@
 package com.news.controller;
 
 import com.news.entity.Topic;
-import com.news.payload.CommentDTO;
 import com.news.payload.TopicDTO;
 import com.news.service.TopicService;
 import jakarta.validation.Valid;
@@ -28,10 +27,32 @@ public class TopicController {
         return new ResponseEntity<>(topic, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR')")
     @GetMapping("/readAll")
     public ResponseEntity<List<Topic>> readAllTopics() {
         List<Topic> topics = topicService.getAllTopics();
         return new ResponseEntity<>(topics, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','EDITOR')")
+    @PutMapping("/updateTopic/{id}")
+    public ResponseEntity<TopicDTO> updateTopic(@Valid @RequestBody TopicDTO topicDTO) {
+        topicService.updateTopic(topicDTO);
+        return new ResponseEntity<>(topicDTO, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','EDITOR')")
+    @PutMapping("/approveTopic/{id}")
+    public ResponseEntity<String> approveTopic(Long id) {
+        topicService.approveTopic(id);
+        return new ResponseEntity<>("Topic approved", HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','EDITOR')")
+    @PutMapping("/rejectTopic")
+    public ResponseEntity<String> rejectTopic(Long id) {
+        topicService.rejectTopic(id);
+        return new ResponseEntity<>("Topic Rejected", HttpStatus.OK);
+    }
+
 }

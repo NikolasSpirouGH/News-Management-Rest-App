@@ -1,11 +1,16 @@
 package com.news.service;
 
+import com.news.entity.ArticleStatus;
+import com.news.payload.ArticleDTO;
 import com.news.payload.CommentDTO;
 import com.news.entity.Comment;
+import org.apache.coyote.Response;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -15,9 +20,10 @@ public interface CommentService {
     CommentDTO updateComment(long commentId, CommentDTO commentRequest);
 
     CommentDTO approveComment(long commentId);
-    CommentDTO rejectComment(long commentId);
+    ResponseEntity<String> rejectComment(long commentId);
 
-    List<Comment> getCommentsByArticleId(Long articleId);
+    List<CommentDTO> getCommentsByArticleId(Long articleId, UserDetails userDetails);
 
-    Comment getCommentById(Long commentId);
+    CommentDTO getCommentById(Long commentId);
 }
+

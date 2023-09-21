@@ -12,9 +12,8 @@ import java.util.List;
 
 public interface ArticleService {
 
-    ArticleDTO getArticleById(Long articleId);
 
-    List<Article> listAllArticlesWithFilters(ArticleStatus status, LocalDate startDate, LocalDate endDate);
+    ArticleDTO getArticleById(Long articleId);
 
     ArticleDTO createArticle(ArticleDTO request, UserDetails userDetails);
 
@@ -28,5 +27,10 @@ public interface ArticleService {
 
     ArticleDTO publishArticle(Long id);
 
-    List<ArticleDTO> searchArticles(String name, String content);
+    List<ArticleDTO> getArticles(@AuthenticationPrincipal UserDetails userDetails);
+
+    List<ArticleDTO> getArticlesWithFilters(UserDetails userDetails, ArticleStatus status, LocalDate startDate, LocalDate endDate);
+
+    List<ArticleDTO> searchArticlesWithFilters(UserDetails userDetails, String name, String content);
+
 }

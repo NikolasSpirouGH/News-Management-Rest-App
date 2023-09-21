@@ -62,6 +62,7 @@ public class UserServiceImpl implements UserService{
         user.setUsername(username);
         user.setFirstname(userDTO.getFirstname());
         user.setLastname(userDTO.getLastname());
+        user.setStatus(UserStatus.INACTIVE);
         User savedUser = userRepository.save(user);
         RegisterResponse registerResponse = modelMapper.map(mapToDTO(savedUser), RegisterResponse.class);
         return registerResponse;
@@ -228,6 +229,7 @@ public class UserServiceImpl implements UserService{
         userRepository.save(user);
     }
 
+    @Transactional
     @Override
     public void deleteUser(Long userId, UserDetails userDetails) {
         User user = userRepository.findById(userId)

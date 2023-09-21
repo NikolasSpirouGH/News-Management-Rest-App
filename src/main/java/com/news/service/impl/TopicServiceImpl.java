@@ -51,6 +51,7 @@ public class TopicServiceImpl implements TopicService {
         return resultTopic;
     }
 
+    @Override
     public TopicDTO updateTopic(TopicDTO topicDTO){
         Topic topic = topicRepository.findById(topicDTO.getTopicId()).orElseThrow(() -> new ResourceNotFoundException("Topic", "id", topicDTO.getTopicId()));
         if(topic.getStatus() == TopicStatus.APPROVED){

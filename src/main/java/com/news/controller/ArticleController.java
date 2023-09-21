@@ -2,6 +2,7 @@ package com.news.controller;
 
 import com.news.entity.Article;
 import com.news.entity.ArticleStatus;
+import com.news.entity.User;
 import com.news.payload.ArticleDTO;
 import com.news.payload.RejectArticleRequest;
 import com.news.service.ArticleService;
@@ -31,7 +32,7 @@ public class ArticleController {
     private final ArticleService articleService;
     private static final Logger logger = LoggerFactory.getLogger(ArticleController.class);
     @PostMapping("/saveArticle")
-    @PreAuthorize("hasAuthority('JOURNALIST')")
+    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR')")
     public ResponseEntity<ArticleDTO> saveArticle(@Valid @RequestBody ArticleDTO request , @AuthenticationPrincipal UserDetails userDetails) {
         ArticleDTO articleResponse = articleService.createArticle(request, userDetails);
         return new ResponseEntity<>(articleResponse, HttpStatus.CREATED);
@@ -74,30 +75,38 @@ public class ArticleController {
     }
 
     @GetMapping("/searchArticles")
-    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
-    public ResponseEntity<List<ArticleDTO>> searchArticles(
+    public ResponseEntity<List<ArticleDTO>> searchArticlesController(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String content
     ) {
-        List<ArticleDTO> results = articleService.searchArticles(name, content);
+        List<ArticleDTO> results = articleService.searchArticlesWithFilters(userDetails, name, content);
         return ResponseEntity.ok(results);
     }
 
     @GetMapping("/getArticleById/{id}")
-    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
+   @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR')")
     public ResponseEntity<ArticleDTO> getArticleById(@PathVariable long id){
         return ResponseEntity.ok(articleService.getArticleById(id));
     }
 
-    @GetMapping("/listArticles")
-    @PreAuthorize("hasAnyAuthority('JOURNALIST','ADMIN','EDITOR','VISITOR')")
-    public ResponseEntity<List<Article>> listAllArticles(
+    @GetMapping("/listArticlesWithFilters")
+    public ResponseEntity<List<ArticleDTO>> getArticlesWithFilters(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) ArticleStatus status,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate
     ) {
-        List<Article> articles = articleService.listAllArticlesWithFilters(status, startDate, endDate);
-        return new ResponseEntity<>(articles, HttpStatus.OK);
+        List<ArticleDTO> articles = articleService.getArticlesWithFilters(userDetails, status, startDate, endDate);
+        return ResponseEntity.ok(articles);
+    }
+
+    @GetMapping("/getArticles")
+    public ResponseEntity<List<ArticleDTO>> getArticles(@AuthenticationPrincipal UserDetails userDetails) {
+        System.out.println("helo controller");
+        List<ArticleDTO> articles = articleService.getArticles(userDetails);
+        return ResponseEntity.ok(articles);
+
     }
 }
 

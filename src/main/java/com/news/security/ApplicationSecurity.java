@@ -55,7 +55,7 @@ public class ApplicationSecurity  {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.authorizeRequests()
-                .requestMatchers("/users/register","/users/auth/login").permitAll()
+                .requestMatchers("/users/register","/users/auth/login","/articles/getArticles","/comments/createComment/**", "/articles/listArticlesWithFilters", "/articles/searchArticles", "/comments/getCommentsByArticleId/**").permitAll()
                 .anyRequest().authenticated();
 
         http.exceptionHandling()

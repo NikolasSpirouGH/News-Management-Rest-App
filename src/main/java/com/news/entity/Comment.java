@@ -1,5 +1,6 @@
 package com.news.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.validation.constraints.NotBlank;
@@ -28,9 +29,6 @@ public class Comment {
     @Column(name="text")
     private String text;
 
-    @Column(name="author_name")
-    private String authorName;
-
     @CreationTimestamp
     @Column(name="create_at",nullable = false,updatable = false)
     private LocalDate createdAt;
@@ -44,7 +42,7 @@ public class Comment {
             name = "article_id",
             referencedColumnName = "article_id"
     )
-    @JsonManagedReference
+    @JsonBackReference
     private Article article;
 
     @ManyToOne

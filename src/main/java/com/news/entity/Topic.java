@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Entity
@@ -40,5 +41,8 @@ public class Topic {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToMany(mappedBy = "topics", cascade = CascadeType.ALL)
+    private List<Article> articles;
 
 }

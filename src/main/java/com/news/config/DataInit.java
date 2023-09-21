@@ -18,10 +18,9 @@ public class DataInit implements CommandLineRunner {
     }
 
     private void initializeRoles() {
-        Role roleVisitor = roleRepository.save(new Role(1L,"VISITOR"));
-        Role roleJournalist = roleRepository.save(new Role(2L,"JOURNALIST"));
-        Role roleEditor = roleRepository.save(new Role(3L,"EDITOR"));
-        Role roleAdmin = roleRepository.save(new Role(4L,"ADMIN"));
+        Role roleJournalist = roleRepository.save(new Role(1L,"JOURNALIST"));
+        Role roleEditor = roleRepository.save(new Role(2L,"EDITOR"));
+        Role roleAdmin = roleRepository.save(new Role(3L,"ADMIN"));
     }
 }
 

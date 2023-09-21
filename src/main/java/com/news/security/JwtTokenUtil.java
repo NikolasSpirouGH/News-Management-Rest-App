@@ -22,20 +22,17 @@ public class JwtTokenUtil {
     private String secretKey;
 
     @Value("${app.jwt.expiration}")
-    private long expiration; // Token expiration time in milliseconds
+    private long expiration;
 
-    // Generate a token for a user
     public String generateAccessToken(User user) {
         return generateToken(user.getUsername(), user.getRole().toString());
     }
 
-    // Refresh an existing token
     public String refreshToken(String token) {
         final Claims claims = getAllClaimsFromToken(token);
         return generateToken(claims.getSubject(), (String) claims.get("role"));
     }
 
-    // Validate if a token is expired
     public boolean isTokenExpired(String token) {
         return getExpirationDateFromToken(token).before(new Date());
     }
@@ -51,17 +48,14 @@ public class JwtTokenUtil {
         }
     }
 
-    // Extract subject (username) from a token
     public String getSubject(String token) {
         return getClaimFromToken(token, Claims::getSubject);
     }
 
-    // Extract expiration date from a token
     public Date getExpirationDateFromToken(String token) {
         return getClaimFromToken(token, Claims::getExpiration);
     }
 
-    // Extract a claim from a token using a custom function
     private <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = getAllClaimsFromToken(token);
         return claimsResolver.apply(claims);
@@ -88,12 +82,10 @@ public class JwtTokenUtil {
     private Set<String> invalidatedTokens = new HashSet<>();
 
     public void invalidateUserToken(String token) {
-        // Add the token to the blacklist
         invalidatedTokens.add(token);
     }
 
     public boolean isTokenInvalidated(String token) {
-        // Check if the token is in the blacklist
         return invalidatedTokens.contains(token);
     }
 }
